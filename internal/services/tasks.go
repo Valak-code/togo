@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -120,6 +121,20 @@ func (s *ToDoService) addTask(resp http.ResponseWriter, req *http.Request) {
 	t.CreatedDate = now.Format("2006-01-02")
 
 	resp.Header().Set("Content-Type", "application/json")
+
+	canRecord, err := s.Store.CheckTaskPerDay(req.Context(), sql.NullString{
+		String: userID,
+		Valid:  true,
+	}, t)
+	if !canRecord {
+		resp.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		fmt.Println(err)
+		resp.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	err = s.Store.AddTask(req.Context(), t)
 	if err != nil {
