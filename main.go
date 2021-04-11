@@ -5,14 +5,16 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/manabie-com/togo/commons"
 	"github.com/manabie-com/togo/internal/services"
 	sqllite "github.com/manabie-com/togo/internal/storages/sqlite"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 )
 
 func main() {
-	db, err := sql.Open("sqlite3", "./data.db")
+	commons.InitDB()
+	db, err := sql.Open("postgres", commons.CONNECTION_STRING)
 	if err != nil {
 		log.Fatal("error opening db", err)
 	}

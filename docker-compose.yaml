@@ -1,0 +1,31 @@
+version: "2.0"
+services:
+  postgres-db:
+    image: postgres
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: togo
+      PGDATA: /data
+    ports:
+      - "5432:5432"
+    networks:
+      - mynetwork
+  backend:
+    container_name: backend
+    build: .
+    restart: always
+    depends_on:
+      - postgres-db
+    networks:
+      - mynetwork
+    links:
+      - "postgres-db:postgres-db"
+    ports:
+      - 5050:5050
+networks:
+  mynetwork:
+    external:
+      name: my-pre-existing-network
