@@ -3,6 +3,7 @@ package sqllite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/manabie-com/togo/internal/storages"
@@ -56,7 +57,8 @@ func (l *LiteDB) CheckTaskPerDay(ctx context.Context, userID sql.NullString, t *
 			return false, err
 		}
 	}
-	return count <= 5, nil
+	maxTodo := l.GetMaxToDo(ctx, userID)
+	return count <= maxTodo, nil
 }
 
 // AddTask adds a new task to DB
@@ -72,13 +74,31 @@ func (l *LiteDB) AddTask(ctx context.Context, t *storages.Task) error {
 
 // ValidateUser returns tasks if match userID AND password
 func (l *LiteDB) ValidateUser(ctx context.Context, userID, pwd sql.NullString) bool {
+	fmt.Println(userID, pwd)
 	stmt := `SELECT id FROM users WHERE id = ? AND password = ?`
-	row := l.DB.QueryRowContext(ctx, stmt, userID, pwd)
-	u := &storages.User{}
-	err := row.Scan(&u.ID)
+	row, err := l.DB.Query(stmt, userID, pwd)
 	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	defer row.Close()
+	u := &storages.User{}
+	err = row.Scan(&u.ID)
+	if err != nil {
+		fmt.Println(err)
 		return false
 	}
 
 	return true
+}
+
+func (l *LiteDB) GetMaxToDo(ctx context.Context, userID sql.NullString) int {
+	stmt := `SELECT max_todo FROM users WHERE id = ?`
+	row := l.DB.QueryRowContext(ctx, stmt, userID)
+	var maxTodo int
+	err := row.Scan(&maxTodo)
+	if err != nil {
+		return 0
+	}
+	return maxTodo
 }
